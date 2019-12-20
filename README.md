@@ -1,6 +1,6 @@
 # Raspberry Pi WiFi Configuration via Web interface
 
-This is loosely based on https://github.com/schollz/raspberry-pi-turnkey, but in reality works quite differently.
+This is loosely based on https://github.com/schollz/raspberry-pi-turnkey, but in reality works quite differently. The underlying mechanism is more closely aligned with https://github.com/peebles/rpi3-wifi-station-ap-stretch.
 
 An access point is set up on wireless interface uap0, which is always on. When this is accessed, the user can select which of the available WiFi networks the Raspberry Pi connects to. Once selected, the new network is joined without a reboot. The connection is confirmed in the web interface of the access point.
 
