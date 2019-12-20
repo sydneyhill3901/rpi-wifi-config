@@ -51,12 +51,9 @@ if [ "$ifwireless" = "1" ] && \
     type wpa_supplicant >/dev/null 2>&1 && \
     type wpa_cli >/dev/null 2>&1
 then
-    case "$reason" in
-        PREINIT)        wpa_supplicant_start;;
-        RECONFIGURE)    wpa_supplicant_reconfigure;;
-        DEPARTED)       wpa_supplicant_stop;;
-        IPV4LL)         wpa_supplicant -B -iwlan0 -f/var/log/wpa_supplicant.log -c/etc/wpa_supplicant/wpa_supplicant.conf;;
-    esac
+	if [ "$reason" = "IPV4LL" ]; then
+		wpa_supplicant -B -iwlan0 -f/var/log/wpa_supplicant.log -c/etc/wpa_supplicant/wpa_supplicant.conf
+	fi
 fi
 ' | sudo tee /lib/dhcpcd/dhcpcd-hooks/10-wpa_supplicant
 
@@ -79,7 +76,8 @@ echo "allow-hotplug uap0
 auto uap0
 iface uap0 inet static
     address $HOSTAP_IP
-    netmask $HOSTAP_NETMASK" | sudo tee /etc/network/interfaces.d/ap
+    netmask $HOSTAP_NETMASK
+" | sudo tee /etc/network/interfaces.d/ap
 
 
 echo "interface=uap0
