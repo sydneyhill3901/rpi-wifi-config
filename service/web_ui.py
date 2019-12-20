@@ -24,7 +24,7 @@ def getssid():
                 ssid_list.append(a[1])
             except:
                 pass
-    print(ssid_list)
+    print(f"SSID list: {ssid_list}")
     ssid_list = sorted(list(set(ssid_list)))
     return ssid_list
 
@@ -114,4 +114,4 @@ def check_connection():
 
 if __name__ == "__main__":
     print("Running access point web interface")
-    app.run(host="0.0.0.0", port=8000, threaded=True)
+    app.run(host="0.0.0.0", port=7000, threaded=True)
