@@ -1,15 +1,8 @@
 import subprocess
-import signal
-import string
-import random
 import re
-import json
-import time
 import os
-import socket
-import requests
 
-from flask import Flask, request, send_from_directory, jsonify, render_template, redirect
+from flask import Flask, request, render_template, redirect
 app = Flask(__name__, static_url_path='')
 
 currentdir = os.path.dirname(os.path.abspath(__file__))
@@ -36,7 +29,16 @@ def getssid():
     return ssid_list
 
 
-wpa_conf = """country=US
+def wificonnected():
+    result = subprocess.check_output(['iwconfig', 'wlan0'])
+    matches = re.findall(r'\"(.+?)\"', result.split(b'\n')[0].decode('utf-8'))
+    if len(matches) > 0:
+        return matches[0])
+    else:
+        return None
+
+
+WPA_TEMPLATE = """country=US
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
 update_config=1
 network={
@@ -44,16 +46,16 @@ network={
     %s
 }"""
 
-wpa_conf_default = """country=US
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
-"""
-
-
 
 @app.route('/')
 def main():
-    return render_template('index.html', ssids=getssid(), message="Welcome! Please select the WiFi network.")
+    current_network = wificonnected()
+    if current_network:
+        msg = f"Currently connected to '{current_network}' <br />Select new network if desired:"
+    else:
+        msg = "Welcome! Please select the WiFi network:
+
+    return render_template('index.html', ssids=getssid(), message=msg)
 
 # Captive portal when connected with iOS or Android
 @app.route('/generate_204')
@@ -69,86 +71,13 @@ def applecaptive():
 def windowscaptive():
     return redirect("http://192.168.4.1", code=302)
 
-def check_cred(ssid, password):
-    '''Validates ssid and password and returns True if valid and False if not valid'''
-    wpadir = currentdir + '/wpa/'
-    testconf = wpadir + 'test.conf'
-    wpalog = wpadir + 'wpa.log'
-    wpapid = wpadir + 'wpa.pid'
-
-    if not os.path.exists(wpadir):
-        os.mkdir(wpadir)
-
-    for _file in [testconf, wpalog, wpapid]:
-        if os.path.exists(_file):
-            os.remove(_file)
-
-    # Generate temp wpa.conf
-    result = subprocess.check_output(['wpa_passphrase', ssid, password])
-    with open(testconf, 'w') as f:
-        f.write(result.decode('utf-8'))
-
-    def stop_ap(stop):
-        if stop:
-            # Services need to be stopped to free up wlan0 interface
-            print("Stopping services hostapd, dnsmasq, dhcpcd")
-            print(subprocess.check_output(['systemctl', "stop", "hostapd", "dnsmasq", "dhcpcd"]))
-            print("Stopped")
-        else:
-            print("Restarting services dnsmasq, dhcpcd, hostapd")
-            print(subprocess.check_output(['systemctl', "restart", "dnsmasq", "dhcpcd"]))
-            time.sleep(15)
-            print(subprocess.check_output(['systemctl', "restart", "hostapd"]))
-            print("Restarted")
-
-    # Sentences to check for
-    fail = "pre-shared key may be incorrect"
-    #success = "WPA: Key negotiation completed"
-    success = "completed"
-
-    stop_ap(True)
-
-    print("Connecting with wpa_supplicant")
-    result = subprocess.check_output(['wpa_supplicant',
-                                      "-Dnl80211",
-                                      "-iwlan0",
-                                      "-c/" + testconf,
-                                      "-f", wpalog,
-                                      "-B",
-                                      "-P", wpapid])
-    print(f"Result: {result}")
-    print("Waiting for success/fail log messages:")
-
-    checkwpa = True
-    while checkwpa:
-        time.sleep(1)
-        with open(wpalog, 'r') as f:
-            content = f.read()
-            print(content)
-            if success in content:
-                valid_psk = True
-                checkwpa = False
-            elif fail in content:
-                valid_psk = False
-                checkwpa = False
-            else:
-                continue
-
-    # Kill wpa_supplicant to stop it from setting up dhcp, dns
-    with open(wpapid, 'r') as p:
-        pid = p.read()
-        pid = int(pid.strip())
-        os.kill(pid, signal.SIGTERM)
-
-    stop_ap(False) # Restart services
-    return valid_psk
-
 @app.route('/static/<path:path>')
 def send_static(path):
     return send_from_directory('static', path)
 
-@app.route('/signin', methods=['POST'])
-def signin():
+
+@app.route('/connect', methods=['POST'])
+def connect():
     ssid = request.form['ssid']
     password = request.form['password']
 
@@ -156,67 +85,33 @@ def signin():
     if password == "":
         pwd = "key_mgmt=NONE" # If open AP
 
-    print(f"Checking SSID {ssid}, password {password}")
-    valid_psk = check_cred(ssid, password)
-    print(f"PSK is valid: {valid_psk}")
-    if not valid_psk:
-        # User will not see this because they will be disconnected but we need to break here anyway
-        return render_template('ap.html', message="Wrong password!")
+    print(f"Setting SSID {ssid}, password {password}")
 
     with open('wpa.conf', 'w') as f:
-        f.write(wpa_conf % (ssid, pwd))
-    with open('status.json', 'w') as f:
-        f.write(json.dumps({'status':'disconnected'}))
-    print("Disabling access point and restarting")
-    subprocess.Popen(["./disable_ap.sh"])
-    return render_template('index.html', message="Please wait 2 minutes to connect.")
+        f.write(WPA_TEMPLATE % (ssid, pwd))
+    subprocess.Popen(["./set_wpa.sh"])
 
-def wificonnected():
-    result = subprocess.check_output(['iwconfig', 'wlan0'])
-    matches = re.findall(r'\"(.+?)\"', result.split(b'\n')[0].decode('utf-8'))
-    if len(matches) > 0:
-        print("got connected to " + matches[0])
-        return True
-    return False
+    msg = f"Connecting to network '{ssid}'..."
+
+    return render_template('connecting.html', ssids=getssid(), message=msg, redirect_interval=5, redirect_url='/connect')
+
+
+@app.route('/connect', methods=['GET'])
+def check_connection():
+
+    current_network = wificonnected()
+    if current_network:
+        msg = f"Connected to '{current_network}'"
+        sleep = 60
+        redir_url = '/'
+    else:
+        msg = f"Connecting to network..."
+        sleep = 5
+        redir_url = '/connect'
+
+    return render_template('connecting.html', ssids=getssid(), message=msg, redirect_interval=sleep, redirect_url=redir_url)
+
 
 if __name__ == "__main__":
-    print("Sleeping 5 seconds before checking connection")
-    time.sleep(5)
-    # get status
-    s = {'status':'disconnected'}
-    if not os.path.isfile('status.json'):
-        with open('status.json', 'w') as f:
-            f.write(json.dumps(s))
-    else:
-        s = json.load(open('status.json'))
-
-    # check connection
-    print("Checking connection")
-    if wificonnected():
-        print("Wifi is connected")
-        s['status'] = 'connected'
-    else:
-        if s['status'] == 'connected': # Don't change if status in status.json is hostapd
-            s['status'] = 'disconnected'
-
-    print(f"Status: {s}")
-
-    with open('status.json', 'w') as f:
-        f.write(json.dumps(s))
-
-    if s['status'] == 'disconnected':
-        s['status'] = 'hostapd'
-        with open('status.json', 'w') as f:
-            f.write(json.dumps(s))
-        with open('wpa.conf', 'w') as f:
-            f.write(wpa_conf_default)
-        print("Will restart to enable access point")
-        subprocess.Popen("./enable_ap.sh")
-    elif s['status'] == 'connected':
-        print('Connected. Running hooks and sleeping')
-        subprocess.Popen("./startup.sh")
-        while True:
-            time.sleep(60000)
-    else:
         print("Running access point web interface")
-        app.run(host="0.0.0.0", port=80, threaded=True)
+    app.run(host="0.0.0.0", port=6000, threaded=True)
