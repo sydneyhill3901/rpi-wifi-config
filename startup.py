@@ -158,6 +158,7 @@ def signin():
         f.write(wpa_conf % (ssid, pwd))
     with open('status.json', 'w') as f:
         f.write(json.dumps({'status':'disconnected'}))
+    print("Disabling access point and restarting")
     subprocess.Popen(["./disable_ap.sh"])
     return render_template('index.html', message="Please wait 2 minutes to connect.")
 
@@ -187,7 +188,7 @@ if __name__ == "__main__":
         if s['status'] == 'connected': # Don't change if status in status.json is hostapd
             s['status'] = 'disconnected'
 
-    print("Status: " + s)
+    print(f"Status: {s}")
 
     with open('status.json', 'w') as f:
         f.write(json.dumps(s))
