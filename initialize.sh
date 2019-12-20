@@ -13,7 +13,7 @@ echo ===
 echo === Installing packages
 echo ===
 
-sudo apt-get install -y dnsmasq hostapd python3-flask python3-requests git
+sudo apt-get install -y dnsmasq hostapd python3-flask
 sudo systemctl stop dnsmasq && sudo systemctl stop hostapd
 
 echo
