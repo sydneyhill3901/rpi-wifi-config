@@ -38,7 +38,7 @@ def getssid():
 def id_generator(size=6, chars=string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
-wpa_conf = """country=GB
+wpa_conf = """country=US
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
 update_config=1
 network={
@@ -46,7 +46,7 @@ network={
     %s
 }"""
 
-wpa_conf_default = """country=GB
+wpa_conf_default = """country=US
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
 update_config=1
 """
@@ -170,6 +170,7 @@ def wificonnected():
     return False
 
 if __name__ == "__main__":
+    print("Sleeping 15 seconds before checking connection")
     time.sleep(15)
     # get status
     s = {'status':'disconnected'}
@@ -182,9 +183,11 @@ if __name__ == "__main__":
     # check connection
     if wificonnected():
         s['status'] = 'connected'
-    if not wificonnected():
+    else:
         if s['status'] == 'connected': # Don't change if status in status.json is hostapd
             s['status'] = 'disconnected'
+
+    print("Status: " + s)
 
     with open('status.json', 'w') as f:
         f.write(json.dumps(s))
@@ -195,11 +198,13 @@ if __name__ == "__main__":
             f.write(json.dumps(s))
         with open('wpa.conf', 'w') as f:
             f.write(wpa_conf_default)
+        print("Will restart to enable access point")
         subprocess.Popen("./enable_ap.sh")
     elif s['status'] == 'connected':
-        print('Connected')
+        print('Connected. Running hooks and sleeping')
         subprocess.Popen("./startup.sh")
         while True:
             time.sleep(60000)
     else:
+        print("Running access point web interface")
         app.run(host="0.0.0.0", port=80, threaded=True)
