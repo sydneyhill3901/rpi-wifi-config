@@ -3,7 +3,7 @@ Description=Raspberry Pi WiFi configuration service.
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 /opt/rpi-wifi-config/startup.py
+ExecStart=/usr/bin/python3 /opt/rpi-wifi-config-service/web_ui.py
 
 [Install]
 WantedBy=multi-user.target
