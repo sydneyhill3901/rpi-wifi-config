@@ -33,7 +33,7 @@ def wificonnected():
     result = subprocess.check_output(['iwconfig', 'wlan0'])
     matches = re.findall(r'\"(.+?)\"', result.split(b'\n')[0].decode('utf-8'))
     if len(matches) > 0:
-        return matches[0])
+        return matches[0]
     else:
         return None
 
@@ -53,7 +53,7 @@ def main():
     if current_network:
         msg = f"Currently connected to '{current_network}' <br />Select new network if desired:"
     else:
-        msg = "Welcome! Please select the WiFi network:
+        msg = "Welcome! Please select the WiFi network:"
 
     return render_template('index.html', ssids=getssid(), message=msg)
 
@@ -113,5 +113,5 @@ def check_connection():
 
 
 if __name__ == "__main__":
-        print("Running access point web interface")
-    app.run(host="0.0.0.0", port=6000, threaded=True)
+    print("Running access point web interface")
+    app.run(host="0.0.0.0", port=8888, threaded=True)
