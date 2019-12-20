@@ -2,8 +2,8 @@
 
 set -e
 
-export SSID="ammp-edge"
-export PSK="testpass"
+export SSID="rpi-wifi-config"
+export PSK="1234567890"
 export HOSTAP_IP=192.168.4.1
 export HOSTAP_NETMASK=255.255.255.0
 export HOSTAP_DHCP_START=192.168.4.2

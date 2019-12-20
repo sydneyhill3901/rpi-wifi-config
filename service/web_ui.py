@@ -5,6 +5,8 @@ import os
 from flask import Flask, request, render_template, send_from_directory, redirect
 app = Flask(__name__, static_url_path='')
 
+PORT = 7000
+
 currentdir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(currentdir)
 
@@ -57,19 +59,6 @@ def main():
 
     return render_template('index.html', ssids=getssid(), message=msg)
 
-# Captive portal when connected with iOS or Android
-@app.route('/generate_204')
-def redirect204():
-    return redirect("http://192.168.4.1", code=302)
-
-@app.route('/hotspot-detect.html')
-def applecaptive():
-    return redirect("http://192.168.4.1", code=302)
-
-# Not working for Windows, needs work!
-@app.route('/ncsi.txt')
-def windowscaptive():
-    return redirect("http://192.168.4.1", code=302)
 
 @app.route('/static/<path:path>')
 def send_static(path):
@@ -114,4 +103,4 @@ def check_connection():
 
 if __name__ == "__main__":
     print("Running access point web interface")
-    app.run(host="0.0.0.0", port=7000, threaded=True)
+    app.run(host="0.0.0.0", port=PORT, threaded=True)
