@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 export SSID="ammp-edge"
 export PSK="testpass"
 export HOSTAP_IP=192.168.4.1
@@ -7,17 +9,17 @@ export HOSTAP_NETMASK=255.255.255.0
 export HOSTAP_DHCP_START=192.168.4.2
 export HOSTAP_DHCP_END=192.168.4.20
 
-echo ###
-echo ### Installing packages
-echo ###
+echo ===
+echo === Installing packages
+echo ===
 
 sudo apt-get install -y dnsmasq hostapd python3-flask python3-requests git
 sudo systemctl stop dnsmasq && sudo systemctl stop hostapd
 
 echo
-echo ###
-echo ### Setting configuration files
-echo ###
+echo ===
+echo === Setting configuration files
+echo ===
 
 sudo mv /etc/dnsmasq.conf /etc/dnsmasq.conf.orig
 
@@ -89,9 +91,9 @@ echo 'DAEMON_CONF="/etc/hostapd/hostapd.conf"' | sudo tee --append /etc/default/
 # Note that /etc/dhcpcd.conf doesn't require any modifications
 
 echo 
-echo ###
-echo ### Starting access point
-echo ###
+echo ===
+echo === Starting access point
+echo ===
 
 sudo systemctl unmask hostapd
 sudo systemctl enable hostapd
@@ -101,9 +103,9 @@ sudo systemctl daemon-reload
 sudo systemctl start hostapd && sudo systemctl start dnsmasq
 
 echo
-echo ###
-echo ### Setting up Web UI service
-echo ###
+echo ===
+echo === Setting up Web UI service
+echo ===
 
 sudo cp -r ./service /opt/rpi-wifi-config-service
 sudo cp rpi-wifi-config.service /etc/systemd/system/
@@ -111,4 +113,4 @@ sudo chmod 644 /etc/systemd/system/rpi-wifi-config.service
 sudo systemctl enable rpi-wifi-config.service
 
 echo
-echo ### DONE
+echo === DONE
