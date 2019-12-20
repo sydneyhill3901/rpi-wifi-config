@@ -35,8 +35,6 @@ def getssid():
     ssid_list = sorted(list(set(ssid_list)))
     return ssid_list
 
-def id_generator(size=6, chars=string.ascii_lowercase + string.digits):
-    return ''.join(random.choice(chars) for _ in range(size))
 
 wpa_conf = """country=US
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
@@ -93,18 +91,24 @@ def check_cred(ssid, password):
     def stop_ap(stop):
         if stop:
             # Services need to be stopped to free up wlan0 interface
+            print("Stopping services hostapd, dnsmasq, dhcpcd")
             print(subprocess.check_output(['systemctl', "stop", "hostapd", "dnsmasq", "dhcpcd"]))
+            print("Stopped")
         else:
+            print("Restarting services dnsmasq, dhcpcd, hostapd")
             print(subprocess.check_output(['systemctl', "restart", "dnsmasq", "dhcpcd"]))
             time.sleep(15)
             print(subprocess.check_output(['systemctl', "restart", "hostapd"]))
+            print("Restarted")
 
     # Sentences to check for
     fail = "pre-shared key may be incorrect"
-    success = "WPA: Key negotiation completed"
+    #success = "WPA: Key negotiation completed"
+    success = "completed"
 
     stop_ap(True)
 
+    print("Connecting with wpa_supplicant")
     result = subprocess.check_output(['wpa_supplicant',
                                       "-Dnl80211",
                                       "-iwlan0",
@@ -112,11 +116,15 @@ def check_cred(ssid, password):
                                       "-f", wpalog,
                                       "-B",
                                       "-P", wpapid])
+    print(f"Result: {result}")
+    print("Waiting for success/fail log messages:")
 
     checkwpa = True
     while checkwpa:
+        time.sleep(1)
         with open(wpalog, 'r') as f:
             content = f.read()
+            print(content)
             if success in content:
                 valid_psk = True
                 checkwpa = False
@@ -148,8 +156,9 @@ def signin():
     if password == "":
         pwd = "key_mgmt=NONE" # If open AP
 
-    print(ssid, password)
+    print(f"Checking SSID {ssid}, password {password}")
     valid_psk = check_cred(ssid, password)
+    print(f"PSK is valid: {valid_psk}")
     if not valid_psk:
         # User will not see this because they will be disconnected but we need to break here anyway
         return render_template('ap.html', message="Wrong password!")
@@ -171,8 +180,8 @@ def wificonnected():
     return False
 
 if __name__ == "__main__":
-    print("Sleeping 15 seconds before checking connection")
-    time.sleep(15)
+    print("Sleeping 5 seconds before checking connection")
+    time.sleep(5)
     # get status
     s = {'status':'disconnected'}
     if not os.path.isfile('status.json'):
@@ -182,7 +191,9 @@ if __name__ == "__main__":
         s = json.load(open('status.json'))
 
     # check connection
+    print("Checking connection")
     if wificonnected():
+        print("Wifi is connected")
         s['status'] = 'connected'
     else:
         if s['status'] == 'connected': # Don't change if status in status.json is hostapd

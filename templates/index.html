@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Sign In</title>
+    <title>WiFi Connection</title>
 
     <!-- Bootstrap core CSS -->
     <link href="/static/bootstrap.min.css" rel="stylesheet">
@@ -21,13 +21,8 @@
       <div class="text-center mb-4">
 <!--         <img class="mb-4" src="https://getbootstrap.com/assets/brand/bootstrap-solid.svg" alt="" width="72" height="72">
  -->
-       <h1 class="h3 mb-3 font-weight-normal">Sign in</h1>
+       <h1 class="h3 mb-3 font-weight-normal">WiFi Connection</h1>
         {% if message %}<p>{{ message|safe }}</p>{% endif %}
-      </div>
-
-      <div class="form-label-group">
-        <input type="email" name="email" id="inputEmail" class="form-control" placeholder="Email address" required autofocus>
-        <label for="inputEmail">Email address</label>
       </div>
 
       <div class="form-group">
@@ -44,7 +39,6 @@
         <label for="inputPassword">Password</label>
       </div>
 
-      <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
-      <p class="mt-5 mb-3 text-muted text-center"><a href="https://github.com/schollz/raspberry-pi-turnkey">Raspberry Pi Turnkey</a></p>
+      <button class="btn btn-lg btn-primary btn-block" type="submit">Connect</button>
     </form>
   </body>
