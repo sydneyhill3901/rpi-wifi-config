@@ -25,7 +25,7 @@ sudo mv /etc/dnsmasq.conf /etc/dnsmasq.conf.orig
 
 echo "interface=lo,uap0
 no-dhcp-interface=lo,wlan0
-dhcp-range=$HOSTAP_IP,$HOSTAP_DHCP_START,$HOSTAP_DHCP_END,24h" | sudo tee /etc/dnsmasq.conf
+dhcp-range=$HOSTAP_DHCP_START,$HOSTAP_DHCP_END,24h" | sudo tee /etc/dnsmasq.conf
 
 
 echo 'ACTION=="add", SUBSYSTEM=="ieee80211", KERNEL=="phy0", \
@@ -51,15 +51,24 @@ if [ "$ifwireless" = "1" ] && \
     type wpa_supplicant >/dev/null 2>&1 && \
     type wpa_cli >/dev/null 2>&1
 then
-	if [ "$reason" = "IPV4LL" ]; then
-		wpa_supplicant -B -iwlan0 -f/var/log/wpa_supplicant.log -c/etc/wpa_supplicant/wpa_supplicant.conf
-	fi
-fi' | sudo tee /lib/dhcpcd/dhcpcd-hooks/10-wpa_supplicant
+    case "$reason" in
+        PREINIT)        wpa_supplicant_start;;
+        RECONFIGURE)    wpa_supplicant_reconfigure;;
+        DEPARTED)       wpa_supplicant_stop;;
+        IPV4LL)         wpa_supplicant -B -iwlan0 -f/var/log/wpa_supplicant.log -c/etc/wpa_supplicant/wpa_supplicant.conf;;
+    esac
+fi
+' | sudo tee /lib/dhcpcd/dhcpcd-hooks/10-wpa_supplicant
 
 
 echo 'country=US
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1' | sudo tee /etc/wpa_supplicant/wpa_supplicant.conf
+update_config=1
+network={
+    ssid="sample"
+    psk="sample123"
+}
+' | sudo tee /etc/wpa_supplicant/wpa_supplicant.conf
 
 
 sudo systemctl daemon-reload
@@ -88,8 +97,6 @@ rsn_pairwise=CCMP" | sudo tee /etc/hostapd/hostapd.conf
 
 echo 'DAEMON_CONF="/etc/hostapd/hostapd.conf"' | sudo tee --append /etc/default/hostapd
 
-# Note that /etc/dhcpcd.conf doesn't require any modifications
-
 echo 
 echo ===
 echo === Starting access point
@@ -114,3 +121,5 @@ sudo systemctl enable rpi-wifi-config.service
 
 echo
 echo === DONE
+echo
+echo Please reboot.

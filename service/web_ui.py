@@ -16,7 +16,15 @@ def getssid():
     if len(ssid_list) > 0:
         return ssid_list
     ssid_list = []
-    get_ssid_list = subprocess.check_output(('iw', 'dev', 'wlan0', 'scan', 'ap-force'))
+
+    for i in range(10):
+        try:
+            get_ssid_list = subprocess.check_output(('iw', 'dev', 'wlan0', 'scan', 'ap-force'))
+            break
+        except subprocess.CalledProcessError as e:
+            print(f"Error while trying to get WiFi list: {e}. Will retry (#{i})")
+            time.sleep(1)
+
     ssids = get_ssid_list.splitlines()
     for s in ssids:
         s = s.strip().decode('utf-8')
