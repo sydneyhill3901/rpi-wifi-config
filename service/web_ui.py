@@ -7,6 +7,7 @@ from flask import Flask, request, render_template, send_from_directory, redirect
 app = Flask(__name__, static_url_path='')
 
 PORT = 7000
+SCAN_RETRIES = 10
 
 currentdir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(currentdir)
@@ -18,15 +19,18 @@ def getssid():
         return ssid_list
     ssid_list = []
 
-    for i in range(10):
+    for i in range(SCAN_RETRIES):
         try:
             get_ssid_list = subprocess.check_output(('iw', 'dev', 'wlan0', 'scan', 'ap-force'))
+            ssids = get_ssid_list.splitlines()
             break
         except subprocess.CalledProcessError as e:
             print(f"Error while trying to get WiFi list: {e}. Will retry (#{i})")
             time.sleep(1)
 
-    ssids = get_ssid_list.splitlines()
+        if i == SCAN_RETRIES - 1:
+            ssids = ['-- not available; please refresh --']
+    
     for s in ssids:
         s = s.strip().decode('utf-8')
         if s.startswith("SSID"):
