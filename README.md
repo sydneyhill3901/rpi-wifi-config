@@ -5,7 +5,11 @@ This is loosely based on https://github.com/schollz/raspberry-pi-turnkey, but in
 An access point is set up on wireless interface uap0, which is always on. When this is accessed, the user can select which of the available WiFi networks the Raspberry Pi connects to. Once selected, the new network is joined without a reboot. The connection is confirmed in the web interface of the access point.
 
 ## Installation
-Run the initialize.sh script. You will need sudo rights. This will install required packages, set up the configuration files, and install a systemd service `rpi-wifi-config` which provides the web UI.
+Run
+```
+./install.sh
+```
+You will be prompted for sudo rights. This will install required packages, set up the configuration files, and install a systemd service `rpi-wifi-config` which provides the web UI. Note that the script will overwrite some system files without prompting or backing them up.
 
 ## Access
 The default hotspot SSID is `rpi-wifi-config` and the default password is `1234567890`.
