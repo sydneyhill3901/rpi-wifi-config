@@ -32,7 +32,11 @@ def getssid():
             ssids = ['-- not available; please refresh --']
     
     for s in ssids:
-        s = s.strip().decode('utf-8')
+        try:
+            s = s.strip().decode('utf-8')
+        except AttributeError:
+            logger.error("Exception while trying to decode SSID scan output; leaving as is")
+
         if s.startswith("SSID"):
             a = s.split(": ")
             try:
