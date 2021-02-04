@@ -93,7 +93,7 @@ def connect():
 
     print(f"Setting SSID {ssid}, password {password}")
 
-    with open('wpa.conf', 'w') as f:
+    with open('/tmp/wpa.conf', 'w') as f:
         f.write(WPA_TEMPLATE % (ssid, pwd))
     subprocess.Popen(["./set_wpa.sh"])
 
