@@ -51,10 +51,14 @@ def getssid():
 def wificonnected():
     result = subprocess.check_output(['iwconfig', 'wlan0'])
     matches = re.findall(r'\"(.+?)\"', result.split(b'\n')[0].decode('utf-8'))
+    ip_result = subprocess.check_output(['ifconfig', 'wlan0'])
+    matchIP = re.findall('inet .{7,23}', ip_result.split(b'\n')[1].decode('utf-8'))
+    ip = matchIP[0].replace('inet ', '')
+    ip = ip[:ip.index(' ')]
     if len(matches) > 0:
-        return matches[0]
+        return matches[0], ip
     else:
-        return None
+        return None, None
 
 
 WPA_TEMPLATE = """country=US
@@ -68,9 +72,9 @@ network={
 
 @app.route('/')
 def main():
-    current_network = wificonnected()
+    current_network, ip = wificonnected()
     if current_network:
-        msg = f"Currently connected to '{current_network}' <br />Select new network if desired:"
+        msg = f"Currently connected to '{current_network}' with IP address of {ip} <br />Select new network if desired:"
     else:
         msg = "Welcome! Please select the WiFi network:"
 
@@ -105,9 +109,9 @@ def connect():
 @app.route('/connect', methods=['GET'])
 def check_connection():
 
-    current_network = wificonnected()
+    current_network, ip = wificonnected()
     if current_network:
-        msg = f"Connected to '{current_network}'"
+        msg = f"Connected to '{current_network}' with IP address of {ip}"
         sleep = 60
         redir_url = '/'
     else:
