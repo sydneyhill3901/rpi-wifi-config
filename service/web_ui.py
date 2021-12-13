@@ -56,9 +56,10 @@ def wificonnected():
     ip = matchIP[0].replace('inet ', '')
     ip = ip[:ip.index(' ')]
     if len(matches) > 0:
-        return matches[0], ip
+        ip_string = str(matches[0]) + " with IP of " + str(ip)
+        return ip_string
     else:
-        return None, None
+        return None
 
 
 WPA_TEMPLATE = """country=US
@@ -72,9 +73,9 @@ network={
 
 @app.route('/')
 def main():
-    current_network, ip = wificonnected()
+    current_network = wificonnected()
     if current_network:
-        msg = f"Currently connected to '{current_network}' with IP address of {ip} <br />Select new network if desired:"
+        msg = f"Currently connected to '{current_network}' <br />Select new network if desired:"
     else:
         msg = "Welcome! Please select the WiFi network:"
 
@@ -109,9 +110,9 @@ def connect():
 @app.route('/connect', methods=['GET'])
 def check_connection():
 
-    current_network, ip = wificonnected()
+    current_network = wificonnected()
     if current_network:
-        msg = f"Connected to '{current_network}' with IP address of {ip}"
+        msg = f"Connected to '{current_network}'"
         sleep = 60
         redir_url = '/'
     else:
